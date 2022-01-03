@@ -12,11 +12,7 @@ use crossterm::{
 use input::Input;
 use modes::{menu::Menu, Mode};
 use options::Options;
-use std::{
-    io::Stdout,
-    thread::sleep,
-    time::{Duration, Instant},
-};
+use std::{io::Stdout, thread::sleep, time::Instant};
 
 pub struct Game {
     stdout: Stdout,
@@ -31,7 +27,7 @@ impl Game {
             stdout,
             mode: Box::new(Menu::new()),
             options: Options::new(),
-            input: Input::new(Duration::from_millis(5))?,
+            input: Input::new()?,
         })
     }
 

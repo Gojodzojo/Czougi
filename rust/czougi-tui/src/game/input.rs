@@ -1,36 +1,60 @@
 use super::options::PlayerKeybindings;
 use crossterm::{
-    event::{poll, read, Event, MouseButton, MouseEvent, MouseEventKind},
+    event::{read, Event, MouseButton, MouseEvent, MouseEventKind},
     terminal::size,
     Result,
 };
 use device_query::Keycode;
 use device_query::{DeviceQuery, DeviceState};
-use std::time::{Duration, Instant};
+use std::sync::{mpsc, Arc, Mutex};
 
 pub struct Input {
-    mouse_state: MouseState,
-    window_state: WindowState,
+    mouse_state: Arc<Mutex<MouseState>>,
+    window_state: Arc<Mutex<WindowState>>,
     device_state: DeviceState,
-    pool_duration: Duration,
+    stoppper_tx: mpsc::Sender<()>,
 }
 
 impl Input {
-    pub fn new(pool_duration: Duration) -> Result<Self> {
-        Ok(Input {
-            mouse_state: MouseState::new(),
-            window_state: WindowState::new()?,
+    pub fn new() -> Result<Self> {
+        let (stoppper_tx, stoppper_rx) = mpsc::channel();
+
+        let input = Input {
+            mouse_state: Arc::new(Mutex::new(MouseState::new())),
+            window_state: Arc::new(Mutex::new(WindowState::new()?)),
             device_state: DeviceState::new(),
-            pool_duration,
-        })
+            stoppper_tx,
+        };
+
+        let mouse_state = input.mouse_state.clone();
+        let window_state = input.window_state.clone();
+
+        // Thread updating mouse and window state
+        std::thread::spawn(move || loop {
+            if let Ok(()) = stoppper_rx.try_recv() {
+                break;
+            }
+
+            match read().unwrap() {
+                Event::Mouse(mouse_event) => {
+                    let mut mouse_state = mouse_state.lock().unwrap();
+                    mouse_state.update(mouse_event);
+                }
+                Event::Resize(width, height) => {
+                    let mut window_state = window_state.lock().unwrap();
+                    window_state.update(width, height);
+                }
+                _ => {}
+            }
+        });
+
+        Ok(input)
     }
 
     pub fn get_state(&mut self, keybindings: &[PlayerKeybindings; 4]) -> Result<InputState> {
-        self.update()?;
-
         Ok(InputState {
-            mouse_state: self.mouse_state.get_state(),
-            window_state: self.window_state.get_state(),
+            mouse_state: self.mouse_state.lock().unwrap().get_state(),
+            window_state: self.window_state.lock().unwrap().get_state(),
             players_keys_states: self.get_players_keys_state(&keybindings),
         })
     }
@@ -44,32 +68,11 @@ impl Input {
             PlayerKeysState::new(&keys, &keybindings[3]),
         ]
     }
+}
 
-    fn update(&mut self) -> Result<()> {
-        let max_time = Instant::now() + self.pool_duration;
-
-        loop {
-            if Instant::now() > max_time {
-                break;
-            }
-            if poll(self.pool_duration)? {
-                let event = read()?;
-
-                match event {
-                    Event::Mouse(mouse_event) => {
-                        self.mouse_state.update(mouse_event);
-                    }
-                    Event::Resize(width, height) => {
-                        self.window_state.update(width, height);
-                    }
-                    _ => {}
-                }
-            } else {
-                break;
-            }
-        }
-
-        Ok(())
+impl Drop for Input {
+    fn drop(&mut self) {
+        self.stoppper_tx.send(()).unwrap();
     }
 }
 
