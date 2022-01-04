@@ -6,7 +6,7 @@ use crossterm::{
     cursor,
     event::{DisableMouseCapture, EnableMouseCapture},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode},
+    terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
     Result,
 };
 use input::Input;
@@ -38,7 +38,13 @@ impl Game {
     }
 
     pub fn uninit(&mut self) -> Result<()> {
-        execute!(self.stdout, DisableMouseCapture, cursor::Show)?;
+        execute!(
+            self.stdout,
+            DisableMouseCapture,
+            cursor::Show,
+            Clear(ClearType::All),
+            cursor::MoveTo(0, 0),
+        )?;
         disable_raw_mode()?;
         Ok(())
     }
@@ -52,7 +58,12 @@ impl Game {
             current_time = Instant::now();
             let delta_time = current_time - previous_time;
 
-            let input_state = self.input.get_state(&self.options.keybindings)?;
+            let input_state = self.input.get_state(&self.options.keybindings);
+
+            if input_state.ctrl_c {
+                break;
+            }
+
             self.mode.draw(&mut self.stdout, delta_time, &input_state)?;
 
             let desired_time = current_time + self.options.interval;
@@ -61,5 +72,7 @@ impl Game {
                 sleep(desired_time - now);
             }
         }
+
+        Ok(())
     }
 }

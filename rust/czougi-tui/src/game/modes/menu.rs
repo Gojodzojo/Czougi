@@ -26,6 +26,7 @@ impl Mode for Menu {
             mouse_state,
             window_state,
             players_keys_states,
+            ..
         } = input_state;
 
         if players_keys_states[0].up && self.row >= 1 {
