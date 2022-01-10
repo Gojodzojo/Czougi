@@ -20,6 +20,9 @@ impl Mode for Menu {
         &mut self,
         stdout: &mut Stdout,
         delta_time: Duration,
+        horizontal_margin: u16,
+        vertical_margin: u16,
+        resized: bool,
         input_state: &InputState,
     ) -> Result<()> {
         let InputState {
