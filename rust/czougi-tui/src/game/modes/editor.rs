@@ -4,13 +4,39 @@ use crate::game::input::InputState;
 use crate::game::modes::drawing_utils::block::{
     draw_block, BRICK_COLOR, CONCRETE_COLOR, GRASS_COLOR, WATER_COLOR,
 };
-use crate::game::modes::drawing_utils::{self, block};
 use crossterm::style::{Attribute, Color, SetAttribute, SetBackgroundColor, SetForegroundColor};
 use crossterm::{cursor, queue, style::Print, Result};
 use std::io::Stdout;
 use std::time::Duration;
 
 pub struct Editor {}
+
+impl Mode for Editor {
+    fn draw(
+        &mut self,
+        stdout: &mut Stdout,
+        delta_time: Duration,
+        horizontal_margin: u16,
+        vertical_margin: u16,
+        resized: bool,
+        input_state: &InputState,
+    ) -> Result<()> {
+        let InputState {
+            mouse_state,
+            window_state,
+            players_keys_states,
+            ..
+        } = input_state;
+
+        if resized {
+            self.draw_sidebar(stdout, horizontal_margin + 100, vertical_margin)?;
+        }
+
+        self.draw_map(stdout, horizontal_margin, vertical_margin)?;
+
+        Ok(())
+    }
+}
 
 impl Editor {
     pub fn new() -> Self {
@@ -82,33 +108,6 @@ impl Editor {
             cursor::MoveTo(x, y + 49),
             Print(horizontal_lines),
         )?;
-
-        Ok(())
-    }
-}
-
-impl Mode for Editor {
-    fn draw(
-        &mut self,
-        stdout: &mut Stdout,
-        delta_time: Duration,
-        horizontal_margin: u16,
-        vertical_margin: u16,
-        resized: bool,
-        input_state: &InputState,
-    ) -> Result<()> {
-        let InputState {
-            mouse_state,
-            window_state,
-            players_keys_states,
-            ..
-        } = input_state;
-
-        if resized {
-            self.draw_sidebar(stdout, horizontal_margin + 100, vertical_margin)?;
-        }
-
-        self.draw_map(stdout, horizontal_margin, vertical_margin)?;
 
         Ok(())
     }

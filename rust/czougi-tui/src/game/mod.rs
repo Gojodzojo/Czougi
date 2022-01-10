@@ -11,7 +11,7 @@ use crossterm::{
     Result,
 };
 use input::Input;
-use modes::{editor::Editor, menu::Menu, Mode};
+use modes::{menu::Menu, Mode};
 use options::Options;
 use std::{
     io::{Stdout, Write},
@@ -38,7 +38,7 @@ impl Game {
     pub fn new(stdout: Stdout) -> Result<Self> {
         Ok(Game {
             stdout,
-            mode: Box::new(Editor::new()),
+            mode: Box::new(Menu::new()),
             options: Options::new(),
             input: Input::new()?,
             horizontal_margin: 0,
