@@ -20,18 +20,13 @@ impl Mode for Editor {
     fn draw(
         &mut self,
         stdout: &mut Stdout,
-        delta_time: Duration,
+        _delta_time: Duration,
         horizontal_margin: u16,
         vertical_margin: u16,
         resized: bool,
         input_state: &InputState,
     ) -> Result<()> {
-        let InputState {
-            mouse_state,
-            window_state,
-            players_keys_states,
-            ..
-        } = input_state;
+        let InputState { mouse_state, .. } = input_state;
 
         if resized {
             self.draw_sidebar(stdout, horizontal_margin + 100, vertical_margin)?;

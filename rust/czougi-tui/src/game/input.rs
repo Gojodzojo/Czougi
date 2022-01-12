@@ -51,27 +51,12 @@ impl Input {
         Ok(input)
     }
 
-    pub fn get_state(&mut self, keybindings: &[PlayerKeybindings; 4]) -> InputState {
-        let (players_keys_states, ctrl_c) = self.get_keys_state(&keybindings);
+    pub fn get_state(&mut self) -> InputState {
         InputState {
             mouse_state: self.mouse_state.lock().unwrap().get_state(),
             window_state: self.window_state.lock().unwrap().get_state(),
-            players_keys_states,
-            ctrl_c,
+            keyboard_state: self.device_state.get_keys(),
         }
-    }
-
-    fn get_keys_state(&self, keybindings: &[PlayerKeybindings; 4]) -> ([PlayerKeysState; 4], bool) {
-        let keys = self.device_state.get_keys();
-        (
-            [
-                PlayerKeysState::new(&keys, &keybindings[0]),
-                PlayerKeysState::new(&keys, &keybindings[1]),
-                PlayerKeysState::new(&keys, &keybindings[2]),
-                PlayerKeysState::new(&keys, &keybindings[3]),
-            ],
-            keys.contains(&Keycode::LControl) && keys.contains(&Keycode::C),
-        )
     }
 }
 
@@ -83,9 +68,8 @@ impl Drop for Input {
 
 pub struct InputState {
     pub mouse_state: MouseState,
-    pub players_keys_states: [PlayerKeysState; 4],
+    pub keyboard_state: Vec<Keycode>,
     pub window_state: WindowState,
-    pub ctrl_c: bool,
 }
 
 pub struct PlayerKeysState {
@@ -105,6 +89,18 @@ impl PlayerKeysState {
             right: keys.contains(&keybindings.right),
             shoot: keys.contains(&keybindings.shoot),
         }
+    }
+
+    pub fn get_players_keys_state(
+        keys: &Vec<Keycode>,
+        keybindings: &[PlayerKeybindings; 4],
+    ) -> [PlayerKeysState; 4] {
+        [
+            PlayerKeysState::new(&keys, &keybindings[0]),
+            PlayerKeysState::new(&keys, &keybindings[1]),
+            PlayerKeysState::new(&keys, &keybindings[2]),
+            PlayerKeysState::new(&keys, &keybindings[3]),
+        ]
     }
 }
 

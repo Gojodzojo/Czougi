@@ -10,6 +10,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType},
     Result,
 };
+use device_query::Keycode;
 use input::Input;
 use modes::{menu::Menu, Mode};
 use options::Options;
@@ -19,7 +20,7 @@ use std::{
     time::Instant,
 };
 
-use self::{input::WindowState, modes::editor::Editor};
+use self::input::WindowState;
 
 const MIN_WIDTH: u16 = 122;
 const MIN_HEIGHT: u16 = 50;
@@ -77,9 +78,11 @@ impl Game {
             current_time = Instant::now();
             let delta_time = current_time - previous_time;
 
-            let input_state = self.input.get_state(&self.options.keybindings);
+            let input_state = self.input.get_state();
+            let ctrl_c = input_state.keyboard_state.contains(&Keycode::LControl)
+                && input_state.keyboard_state.contains(&Keycode::C);
 
-            if input_state.ctrl_c {
+            if ctrl_c {
                 break;
             }
 
