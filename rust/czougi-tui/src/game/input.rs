@@ -150,6 +150,14 @@ impl MouseState {
     pub fn get_state(&self) -> MouseState {
         self.clone()
     }
+
+    pub fn is_hovered(&self, x: u16, y: u16, width: u16, height: u16) -> bool {
+        self.column >= x && self.column <= x + width && self.row >= y && self.row <= y + height
+    }
+
+    pub fn is_clicked(&self, x: u16, y: u16, width: u16, height: u16) -> bool {
+        self.is_hovered(x, y, width, height) && self.left_button
+    }
 }
 
 #[derive(Clone)]

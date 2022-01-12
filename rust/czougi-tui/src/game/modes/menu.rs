@@ -1,3 +1,4 @@
+use super::drawing_utils::draw_multi_line_text;
 use super::Mode;
 use crate::game::input::InputState;
 use crossterm::style::{Color, SetBackgroundColor, SetForegroundColor};
@@ -5,6 +6,47 @@ use crossterm::{cursor, queue, style::Print, terminal, Result};
 use std::io::{Stdout, Write};
 use std::time::Duration;
 
+// Text generated using this tool: https://patorjk.com/software/taag/#p=display&f=Big%20Money-ne&t=CZOUGI
+
+const TITLE: [&str; 8] = [
+    "  /$$$$$$  /$$$$$$$$  /$$$$$$  /$$   /$$  /$$$$$$  /$$$$$$",
+    " /$$__  $$|_____ $$  /$$__  $$| $$  | $$ /$$__  $$|_  $$_/",
+    "| $$  \\__/     /$$/ | $$  \\ $$| $$  | $$| $$  \\__/  | $$",
+    "| $$          /$$/  | $$  | $$| $$  | $$| $$ /$$$$  | $$",
+    "| $$         /$$/   | $$  | $$| $$  | $$| $$|_  $$  | $$",
+    "| $$    $$  /$$/    | $$  | $$| $$  | $$| $$  \\ $$  | $$",
+    "|  $$$$$$/ /$$$$$$$$|  $$$$$$/|  $$$$$$/|  $$$$$$/ /$$$$$$",
+    " \\______/ |________/ \\______/  \\______/  \\______/ |______/ ",
+];
+
+const PLAY_BUTTON_TEXT: [&str; 5] = [
+    "████████████████████████████████████████████████",
+    "█████████████  _ ▐▌  ▐██▌  _  ▐▌ │ ▐████████████",
+    "█████████████    ▐▌  ▐██▌     ▐▌   ▐████████████",
+    "█████████████  ███▌    ▐▌  |  ▐█▌ ▐█████████████",
+    "████████████████████████████████████████████████",
+];
+
+const OPTIONS_BUTTON_TEXT: [&str; 5] = [
+    "████████████████████████████████████████████████",
+    "█     ▐▌  _ ▐▌     ▐█     █▌     ▐▌   │ ▐█   __█",
+    "█  │  ▐▌    ▐██▌ ▐███─   ─█▌  │  ▐▌     ▐█__   █",
+    "█     ▐▌  █████▌ ▐███     █▌     ▐▌ │   ▐█     █",
+    "████████████████████████████████████████████████",
+];
+
+const BUTTON_FRAME: [&str; 7] = [
+    "┌──────────────────────────────────────────────────┐",
+    "│                                                  │",
+    "│                                                  │",
+    "│                                                  │",
+    "│                                                  │",
+    "│                                                  │",
+    "└──────────────────────────────────────────────────┘",
+];
+
+const BUTTON_WIDTH: u16 = 50;
+const BUTTON_HEIGHT: u16 = 5;
 pub struct Menu;
 
 impl Mode for Menu {
@@ -21,11 +63,34 @@ impl Mode for Menu {
 
         if resized {
             self.draw_background(stdout, horizontal_margin, vertical_margin)?;
-            self.draw_title(stdout, horizontal_margin + 32, vertical_margin + 5)?;
-            self.draw_button_frame(stdout, horizontal_margin + 35, vertical_margin + 20)?;
-            self.draw_button_frame(stdout, horizontal_margin + 35, vertical_margin + 30)?;
-            self.draw_play_button(stdout, horizontal_margin + 37, vertical_margin + 21)?;
-            self.draw_options_button(stdout, horizontal_margin + 37, vertical_margin + 31)?;
+
+            // Draw title
+            queue!(stdout, SetForegroundColor(Color::Red))?;
+            draw_multi_line_text(
+                stdout,
+                TITLE.iter(),
+                horizontal_margin + 32,
+                vertical_margin + 5,
+            )?;
+
+            // Draw buttons' frames
+            queue!(
+                stdout,
+                SetBackgroundColor(Color::Black),
+                SetForegroundColor(Color::White)
+            )?;
+            draw_multi_line_text(
+                stdout,
+                BUTTON_FRAME.iter(),
+                horizontal_margin + 35,
+                vertical_margin + 20,
+            )?;
+            draw_multi_line_text(
+                stdout,
+                BUTTON_FRAME.iter(),
+                horizontal_margin + 35,
+                vertical_margin + 30,
+            )?;
 
             queue!(
                 stdout,
@@ -35,6 +100,36 @@ impl Mode for Menu {
                 Print("Mateusz Goik 2022")
             )?;
         }
+
+        let is_play_button_hovered = mouse_state.is_hovered(
+            horizontal_margin + 36,
+            vertical_margin + 21,
+            BUTTON_WIDTH,
+            BUTTON_HEIGHT,
+        );
+
+        let is_options_button_hovered = mouse_state.is_hovered(
+            horizontal_margin + 36,
+            vertical_margin + 31,
+            BUTTON_WIDTH,
+            BUTTON_HEIGHT,
+        );
+
+        self.draw_button(
+            stdout,
+            PLAY_BUTTON_TEXT,
+            horizontal_margin + 37,
+            vertical_margin + 21,
+            is_play_button_hovered,
+        )?;
+
+        self.draw_button(
+            stdout,
+            OPTIONS_BUTTON_TEXT,
+            horizontal_margin + 37,
+            vertical_margin + 31,
+            is_options_button_hovered,
+        )?;
 
         Ok(())
     }
@@ -59,93 +154,29 @@ impl Menu {
         Ok(())
     }
 
-    // Text generated using this tool: https://patorjk.com/software/taag/#p=display&f=Big%20Money-ne&t=CZOUGI
-
-    fn draw_title(&self, stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
-        let lines = [
-            "  /$$$$$$  /$$$$$$$$  /$$$$$$  /$$   /$$  /$$$$$$  /$$$$$$",
-            " /$$__  $$|_____ $$  /$$__  $$| $$  | $$ /$$__  $$|_  $$_/",
-            "| $$  \\__/     /$$/ | $$  \\ $$| $$  | $$| $$  \\__/  | $$",
-            "| $$          /$$/  | $$  | $$| $$  | $$| $$ /$$$$  | $$",
-            "| $$         /$$/   | $$  | $$| $$  | $$| $$|_  $$  | $$",
-            "| $$    $$  /$$/    | $$  | $$| $$  | $$| $$  \\ $$  | $$",
-            "|  $$$$$$/ /$$$$$$$$|  $$$$$$/|  $$$$$$/|  $$$$$$/ /$$$$$$",
-            " \\______/ |________/ \\______/  \\______/  \\______/ |______/ ",
-        ];
-
-        queue!(stdout, SetForegroundColor(Color::Red))?;
-
-        for (i, line) in lines.iter().enumerate() {
-            queue!(stdout, cursor::MoveTo(x, y + i as u16), Print(line))?;
+    fn draw_button(
+        &self,
+        stdout: &mut Stdout,
+        button_text: [&str; 5],
+        x: u16,
+        y: u16,
+        hovered: bool,
+    ) -> Result<()> {
+        if hovered {
+            queue!(
+                stdout,
+                SetBackgroundColor(Color::Black),
+                SetForegroundColor(Color::White)
+            )?;
+        } else {
+            queue!(
+                stdout,
+                SetBackgroundColor(Color::White),
+                SetForegroundColor(Color::Black)
+            )?;
         }
 
-        Ok(())
-    }
-
-    fn draw_button_frame(&self, stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
-        let lines = [
-            "┌──────────────────────────────────────────────────┐",
-            "│                                                  │",
-            "│                                                  │",
-            "│                                                  │",
-            "│                                                  │",
-            "│                                                  │",
-            "└──────────────────────────────────────────────────┘",
-        ];
-
-        queue!(
-            stdout,
-            SetBackgroundColor(Color::Black),
-            SetForegroundColor(Color::White)
-        )?;
-
-        for (i, line) in lines.iter().enumerate() {
-            queue!(stdout, cursor::MoveTo(x, y + i as u16), Print(line))?;
-        }
-
-        Ok(())
-    }
-
-    fn draw_play_button(&self, stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
-        let lines = [
-            "████████████████████████████████████████████████",
-            "█████████████  _ ▐▌  ▐██▌  _  ▐▌ │ ▐████████████",
-            "█████████████    ▐▌  ▐██▌     ▐▌   ▐████████████",
-            "█████████████  ███▌    ▐▌  |  ▐█▌ ▐█████████████",
-            "████████████████████████████████████████████████",
-        ];
-
-        queue!(
-            stdout,
-            SetBackgroundColor(Color::Black),
-            SetForegroundColor(Color::White)
-        )?;
-
-        for (i, line) in lines.iter().enumerate() {
-            queue!(stdout, cursor::MoveTo(x, y + i as u16), Print(line))?;
-        }
-
-        Ok(())
-    }
-
-    fn draw_options_button(&self, stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
-        let lines = [
-            "████████████████████████████████████████████████",
-            "█     ▐▌  _ ▐▌     ▐█     █▌     ▐▌   │ ▐█   __█",
-            "█  │  ▐▌    ▐██▌ ▐███─   ─█▌  │  ▐▌     ▐█__   █",
-            "█     ▐▌  █████▌ ▐███     █▌     ▐▌ │   ▐█     █",
-            "████████████████████████████████████████████████",
-        ];
-
-        queue!(
-            stdout,
-            SetBackgroundColor(Color::White),
-            SetForegroundColor(Color::Black)
-        )?;
-
-        for (i, line) in lines.iter().enumerate() {
-            queue!(stdout, cursor::MoveTo(x, y + i as u16), Print(line))?;
-        }
+        draw_multi_line_text(stdout, button_text.iter(), x, y)?;
 
         Ok(())
     }
