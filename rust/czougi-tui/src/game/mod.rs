@@ -19,7 +19,7 @@ use std::{
     time::Instant,
 };
 
-use self::input::WindowState;
+use self::{input::WindowState, modes::editor::Editor};
 
 const MIN_WIDTH: u16 = 122;
 const MIN_HEIGHT: u16 = 50;
@@ -38,7 +38,7 @@ impl Game {
     pub fn new(stdout: Stdout) -> Result<Self> {
         Ok(Game {
             stdout,
-            mode: Box::new(Menu::new()),
+            mode: Box::new(Editor::new()),
             options: Options::new(),
             input: Input::new()?,
             horizontal_margin: 0,

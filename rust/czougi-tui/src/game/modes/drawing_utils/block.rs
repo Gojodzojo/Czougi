@@ -6,37 +6,90 @@ use crossterm::{
     Result,
 };
 
-pub const BRICK_COLOR: Color = Color::Rgb {
-    r: 156,
-    g: 76,
-    b: 0,
+pub const BRICK_FOREGROUND_COLOR: Color = Color::Rgb {
+    r: 119,
+    g: 43,
+    b: 21,
 };
 
-pub const CONCRETE_COLOR: Color = Color::Rgb {
+pub const BRICK_BACKGROUND_COLOR: Color = Color::Rgb {
+    r: 116,
+    g: 91,
+    b: 68,
+};
+
+pub const CONCRETE_FOREGROUND_COLOR: Color = Color::Rgb {
     r: 196,
     g: 196,
     b: 196,
 };
 
-pub const WATER_COLOR: Color = Color::Rgb {
-    r: 68,
-    g: 68,
-    b: 252,
+pub const CONCRETE_BACKGROUND_COLOR: Color = Color::Rgb {
+    r: 160,
+    g: 160,
+    b: 160,
 };
 
-pub const GRASS_COLOR: Color = Color::Rgb {
-    r: 98,
-    g: 173,
-    b: 4,
+pub const WATER_FOREGROUND_COLOR: Color = Color::Rgb {
+    r: 66,
+    g: 66,
+    b: 255,
 };
 
-pub fn draw_block(stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
+pub const WATER_BACKGROUND_COLOR: Color = Color::Rgb {
+    r: 160,
+    g: 207,
+    b: 242,
+};
+
+pub const LEAVES_FOREGROUND_COLOR: Color = Color::Rgb {
+    r: 140,
+    g: 214,
+    b: 0,
+};
+
+pub const LEAVES_BACKGROUND_COLOR: Color = Color::Rgb { r: 0, g: 82, b: 8 };
+
+pub fn draw_leaves_block(stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
     queue!(
         stdout,
         cursor::MoveTo(x, y),
-        Print("████"),
+        Print("▄▀▄▀"),
         cursor::MoveTo(x, y + 1),
-        Print("████"),
+        Print("▄▀▄▀"),
+    )?;
+    Ok(())
+}
+
+pub fn draw_brick_block(stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
+    queue!(
+        stdout,
+        cursor::MoveTo(x, y),
+        Print("▄▄▀▀"),
+        cursor::MoveTo(x, y + 1),
+        Print("▄▄▀▀"),
+    )?;
+    Ok(())
+}
+
+pub fn draw_water_block(stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
+    queue!(
+        stdout,
+        cursor::MoveTo(x, y),
+        Print("█▄█▀"),
+        cursor::MoveTo(x, y + 1),
+        Print("▄▄▀█"),
+    )?;
+    Ok(())
+}
+
+pub fn draw_concrete_block(stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
+    queue!(
+        stdout,
+        cursor::MoveTo(x, y),
+        Print(" ▄▄ "),
+        cursor::MoveTo(x, y + 1),
+        Print(" ▀▀ "),
     )?;
     Ok(())
 }
