@@ -1,9 +1,9 @@
 use super::drawing_utils::draw_multi_line_text;
 use super::Mode;
-use crate::game::input::InputState;
+use crate::game::input::{InputState, MouseState};
 use crossterm::style::{Color, SetBackgroundColor, SetForegroundColor};
-use crossterm::{cursor, queue, style::Print, terminal, Result};
-use std::io::{Stdout, Write};
+use crossterm::{cursor, queue, style::Print, Result};
+use std::io::Stdout;
 use std::time::Duration;
 
 // Text generated using this tool: https://patorjk.com/software/taag/#p=display&f=Big%20Money-ne&t=CZOUGI
@@ -45,15 +45,15 @@ const BUTTON_FRAME: [&str; 7] = [
     "└──────────────────────────────────────────────────┘",
 ];
 
-const BUTTON_WIDTH: u16 = 50;
-const BUTTON_HEIGHT: u16 = 5;
+const BUTTON_WIDTH: u16 = 51;
+const BUTTON_HEIGHT: u16 = 6;
 pub struct Menu;
 
 impl Mode for Menu {
     fn draw(
         &mut self,
         stdout: &mut Stdout,
-        delta_time: Duration,
+        _delta_time: Duration,
         horizontal_margin: u16,
         vertical_margin: u16,
         resized: bool,
@@ -63,72 +63,23 @@ impl Mode for Menu {
 
         if resized {
             self.draw_background(stdout, horizontal_margin, vertical_margin)?;
-
-            // Draw title
-            queue!(stdout, SetForegroundColor(Color::Red))?;
-            draw_multi_line_text(
-                stdout,
-                TITLE.iter(),
-                horizontal_margin + 32,
-                vertical_margin + 5,
-            )?;
-
-            // Draw buttons' frames
-            queue!(
-                stdout,
-                SetBackgroundColor(Color::Black),
-                SetForegroundColor(Color::White)
-            )?;
-            draw_multi_line_text(
-                stdout,
-                BUTTON_FRAME.iter(),
-                horizontal_margin + 35,
-                vertical_margin + 20,
-            )?;
-            draw_multi_line_text(
-                stdout,
-                BUTTON_FRAME.iter(),
-                horizontal_margin + 35,
-                vertical_margin + 30,
-            )?;
-
-            queue!(
-                stdout,
-                SetForegroundColor(Color::White),
-                SetBackgroundColor(Color::Black),
-                cursor::MoveTo(horizontal_margin + 105, vertical_margin + 49),
-                Print("Mateusz Goik 2022")
-            )?;
+            self.draw_title(stdout, horizontal_margin + 32, vertical_margin + 5)?;
+            self.draw_buttons_frames(stdout, horizontal_margin, vertical_margin)?;
+            self.draw_signature(stdout, horizontal_margin + 105, vertical_margin + 49)?;
         }
 
-        let is_play_button_hovered = mouse_state.is_hovered(
-            horizontal_margin + 36,
-            vertical_margin + 21,
-            BUTTON_WIDTH,
-            BUTTON_HEIGHT,
-        );
-
-        let is_options_button_hovered = mouse_state.is_hovered(
-            horizontal_margin + 36,
-            vertical_margin + 31,
-            BUTTON_WIDTH,
-            BUTTON_HEIGHT,
-        );
-
-        self.draw_button(
+        self.draw_play_button(
             stdout,
-            PLAY_BUTTON_TEXT,
+            mouse_state,
             horizontal_margin + 37,
             vertical_margin + 21,
-            is_play_button_hovered,
         )?;
 
-        self.draw_button(
+        self.draw_options_button(
             stdout,
-            OPTIONS_BUTTON_TEXT,
+            mouse_state,
             horizontal_margin + 37,
             vertical_margin + 31,
-            is_options_button_hovered,
         )?;
 
         Ok(())
@@ -154,7 +105,55 @@ impl Menu {
         Ok(())
     }
 
-    fn draw_button(
+    fn draw_title(&self, stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
+        queue!(stdout, SetForegroundColor(Color::Red))?;
+        draw_multi_line_text(stdout, TITLE.iter(), x, y)?;
+
+        Ok(())
+    }
+
+    fn draw_signature(&self, stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
+        queue!(
+            stdout,
+            SetForegroundColor(Color::White),
+            SetBackgroundColor(Color::Black),
+            cursor::MoveTo(x, y),
+            Print("Mateusz Goik 2022")
+        )?;
+
+        Ok(())
+    }
+
+    fn draw_buttons_frames(
+        &self,
+        stdout: &mut Stdout,
+        horizontal_margin: u16,
+        vertical_margin: u16,
+    ) -> Result<()> {
+        queue!(
+            stdout,
+            SetBackgroundColor(Color::Black),
+            SetForegroundColor(Color::White)
+        )?;
+
+        draw_multi_line_text(
+            stdout,
+            BUTTON_FRAME.iter(),
+            horizontal_margin + 35,
+            vertical_margin + 20,
+        )?;
+
+        draw_multi_line_text(
+            stdout,
+            BUTTON_FRAME.iter(),
+            horizontal_margin + 35,
+            vertical_margin + 30,
+        )?;
+
+        Ok(())
+    }
+
+    fn draw_button_content(
         &self,
         stdout: &mut Stdout,
         button_text: [&str; 5],
@@ -177,6 +176,42 @@ impl Menu {
         }
 
         draw_multi_line_text(stdout, button_text.iter(), x, y)?;
+
+        Ok(())
+    }
+
+    fn draw_play_button(
+        &self,
+        stdout: &mut Stdout,
+        mouse_state: &MouseState,
+        x: u16,
+        y: u16,
+    ) -> Result<()> {
+        let is_play_button_hovered =
+            mouse_state.is_hovered(x - 2, y - 1, BUTTON_WIDTH, BUTTON_HEIGHT);
+        self.draw_button_content(stdout, PLAY_BUTTON_TEXT, x, y, is_play_button_hovered)?;
+
+        if is_play_button_hovered && mouse_state.left_button {
+            // Change game mode
+        }
+
+        Ok(())
+    }
+
+    fn draw_options_button(
+        &self,
+        stdout: &mut Stdout,
+        mouse_state: &MouseState,
+        x: u16,
+        y: u16,
+    ) -> Result<()> {
+        let is_options_button_hovered =
+            mouse_state.is_hovered(x - 2, y - 1, BUTTON_WIDTH, BUTTON_HEIGHT);
+        self.draw_button_content(stdout, OPTIONS_BUTTON_TEXT, x, y, is_options_button_hovered)?;
+
+        if is_options_button_hovered && mouse_state.left_button {
+            // Change game mode
+        }
 
         Ok(())
     }
