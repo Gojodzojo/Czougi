@@ -54,9 +54,9 @@ pub fn draw_leaves_block(stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
     queue!(
         stdout,
         cursor::MoveTo(x, y),
-        Print("▄▀▄▀"),
+        Print("█▀▄▀"),
         cursor::MoveTo(x, y + 1),
-        Print("▄▀▄▀"),
+        Print("▄▀▄█"),
     )?;
     Ok(())
 }
