@@ -38,7 +38,7 @@ impl Game {
     pub fn new(stdout: Stdout) -> Result<Self> {
         Ok(Game {
             stdout,
-            mode: Box::new(Editor::new()),
+            mode: Box::new(Menu::new()),
             options: Options::new(),
             input: Input::new()?,
             horizontal_margin: 0,
