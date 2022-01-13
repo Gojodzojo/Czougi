@@ -1,6 +1,8 @@
 use super::drawing_utils::draw_multi_line_text;
+use super::editor::Editor;
 use super::Mode;
 use crate::game::input::{InputState, MouseState};
+use crate::game::options::Options;
 use crossterm::style::{Color, SetBackgroundColor, SetForegroundColor};
 use crossterm::{cursor, queue, style::Print, Result};
 use std::io::Stdout;
@@ -56,12 +58,13 @@ impl Mode for Menu {
         _delta_time: Duration,
         horizontal_margin: u16,
         vertical_margin: u16,
-        resized: bool,
+        refresh: bool,
         input_state: &InputState,
-    ) -> Result<()> {
+        _options: &Options,
+    ) -> Result<Option<Box<dyn Mode>>> {
         let InputState { mouse_state, .. } = input_state;
 
-        if resized {
+        if refresh {
             self.draw_background(stdout, horizontal_margin, vertical_margin)?;
             self.draw_title(stdout, horizontal_margin + 32, vertical_margin + 5)?;
             self.draw_buttons_frames(stdout, horizontal_margin, vertical_margin)?;
@@ -75,6 +78,15 @@ impl Mode for Menu {
             vertical_margin + 21,
         )?;
 
+        if mouse_state.is_clicked(
+            horizontal_margin + 35,
+            vertical_margin + 20,
+            BUTTON_WIDTH,
+            BUTTON_HEIGHT,
+        ) {
+            return Ok(Some(Box::new(Editor::new())));
+        }
+
         self.draw_options_button(
             stdout,
             mouse_state,
@@ -82,7 +94,16 @@ impl Mode for Menu {
             vertical_margin + 31,
         )?;
 
-        Ok(())
+        if mouse_state.is_clicked(
+            horizontal_margin + 35,
+            vertical_margin + 30,
+            BUTTON_WIDTH,
+            BUTTON_HEIGHT,
+        ) {
+            return Ok(Some(Box::new(Editor::new())));
+        }
+
+        Ok(None)
     }
 }
 
@@ -191,10 +212,6 @@ impl Menu {
             mouse_state.is_hovered(x - 2, y - 1, BUTTON_WIDTH, BUTTON_HEIGHT);
         self.draw_button_content(stdout, PLAY_BUTTON_TEXT, x, y, is_play_button_hovered)?;
 
-        if is_play_button_hovered && mouse_state.left_button {
-            // Change game mode
-        }
-
         Ok(())
     }
 
@@ -208,10 +225,6 @@ impl Menu {
         let is_options_button_hovered =
             mouse_state.is_hovered(x - 2, y - 1, BUTTON_WIDTH, BUTTON_HEIGHT);
         self.draw_button_content(stdout, OPTIONS_BUTTON_TEXT, x, y, is_options_button_hovered)?;
-
-        if is_options_button_hovered && mouse_state.left_button {
-            // Change game mode
-        }
 
         Ok(())
     }

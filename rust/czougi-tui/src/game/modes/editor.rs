@@ -9,6 +9,7 @@ use crate::game::modes::drawing_utils::block::{
     CONCRETE_FOREGROUND_COLOR, LEAVES_BACKGROUND_COLOR, LEAVES_FOREGROUND_COLOR,
     WATER_BACKGROUND_COLOR, WATER_FOREGROUND_COLOR,
 };
+use crate::game::options::Options;
 use crossterm::style::{Attribute, Color, SetAttribute, SetBackgroundColor, SetForegroundColor};
 use crossterm::{cursor, queue, style::Print, Result};
 use std::io::Stdout;
@@ -23,18 +24,19 @@ impl Mode for Editor {
         _delta_time: Duration,
         horizontal_margin: u16,
         vertical_margin: u16,
-        resized: bool,
+        refresh: bool,
         input_state: &InputState,
-    ) -> Result<()> {
+        _options: &Options,
+    ) -> Result<Option<Box<dyn Mode>>> {
         let InputState { mouse_state, .. } = input_state;
 
-        if resized {
+        if refresh {
             self.draw_sidebar(stdout, horizontal_margin + 100, vertical_margin)?;
         }
 
         self.draw_map(stdout, horizontal_margin, vertical_margin)?;
 
-        Ok(())
+        Ok(None)
     }
 }
 

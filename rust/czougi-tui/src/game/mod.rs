@@ -86,16 +86,18 @@ impl Game {
                 break;
             }
 
-            if input_state.window_state.height < MIN_HEIGHT
-                || input_state.window_state.width < MIN_WIDTH
-            {
+            let window_too_small = input_state.window_state.height < MIN_HEIGHT
+                || input_state.window_state.width < MIN_WIDTH;
+
+            if window_too_small {
                 self.print_window_size_information(input_state.window_state)?;
             } else {
-                let mut resized = false;
-                if self.last_window_state.width != input_state.window_state.width
-                    || self.last_window_state.height != input_state.window_state.height
-                {
-                    resized = true;
+                let mut refresh = false;
+                let window_resized = self.last_window_state.width != input_state.window_state.width
+                    || self.last_window_state.height != input_state.window_state.height;
+
+                if window_resized {
+                    refresh = true;
                     self.horizontal_margin = (input_state.window_state.width - 122) / 2;
                     self.vertical_margin = (input_state.window_state.height - 50) / 2;
                     self.last_window_state = input_state.window_state.clone();
@@ -107,14 +109,24 @@ impl Game {
                     )?;
                 }
 
-                self.mode.draw(
+                let new_mode = self.mode.draw(
                     &mut self.stdout,
                     delta_time,
                     self.horizontal_margin,
                     self.vertical_margin,
-                    resized,
+                    refresh,
                     &input_state,
+                    &self.options,
                 )?;
+
+                if let Some(new_mode) = new_mode {
+                    self.mode = new_mode;
+                    // Trigger a refresh
+                    self.last_window_state = WindowState {
+                        width: 0,
+                        height: 0,
+                    };
+                }
             }
 
             self.stdout.flush()?;
@@ -130,7 +142,7 @@ impl Game {
     }
 
     fn print_window_size_information(&mut self, window_state: WindowState) -> Result<()> {
-        execute!(
+        queue!(
             self.stdout,
             cursor::Show,
             SetBackgroundColor(Color::Black),

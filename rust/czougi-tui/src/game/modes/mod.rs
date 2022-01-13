@@ -1,4 +1,5 @@
 use super::input::InputState;
+use super::options::Options;
 use crossterm::Result;
 use std::io::Stdout;
 use std::time::Duration;
@@ -13,7 +14,8 @@ pub trait Mode {
         delta_time: Duration,
         horizontal_margin: u16,
         vertical_margin: u16,
-        resized: bool,
+        refresh: bool,
         input_state: &InputState,
-    ) -> Result<()>;
+        options: &Options,
+    ) -> Result<Option<Box<dyn Mode>>>;
 }
