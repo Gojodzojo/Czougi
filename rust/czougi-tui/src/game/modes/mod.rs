@@ -6,6 +6,7 @@ use std::time::Duration;
 
 mod drawing_utils;
 pub mod editor;
+pub mod game_picker;
 pub mod menu;
 pub trait Mode {
     fn draw(

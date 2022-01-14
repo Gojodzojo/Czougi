@@ -1,5 +1,6 @@
-use super::drawing_utils::draw_multi_line_text;
+use super::drawing_utils::{draw_background, draw_multi_line_text};
 use super::editor::Editor;
+use super::game_picker::GamePicker;
 use super::Mode;
 use crate::game::input::{InputState, MouseState};
 use crate::game::options::Options;
@@ -65,7 +66,7 @@ impl Mode for Menu {
         let InputState { mouse_state, .. } = input_state;
 
         if refresh {
-            self.draw_background(stdout, horizontal_margin, vertical_margin)?;
+            draw_background(stdout, horizontal_margin, vertical_margin)?;
             self.draw_title(stdout, horizontal_margin + 32, vertical_margin + 5)?;
             self.draw_buttons_frames(stdout, horizontal_margin, vertical_margin)?;
             self.draw_signature(stdout, horizontal_margin + 105, vertical_margin + 49)?;
@@ -84,7 +85,7 @@ impl Mode for Menu {
             BUTTON_WIDTH,
             BUTTON_HEIGHT,
         ) {
-            return Ok(Some(Box::new(Editor::new())));
+            return Ok(Some(Box::new(GamePicker::new())));
         }
 
         self.draw_options_button(
@@ -110,20 +111,6 @@ impl Mode for Menu {
 impl Menu {
     pub fn new() -> Self {
         Menu
-    }
-
-    fn draw_background(&self, stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
-        queue!(stdout, SetBackgroundColor(Color::Black))?;
-
-        for row in y..50 + y {
-            queue!(
-                stdout,
-                cursor::MoveTo(x, row),
-                Print("                                                                                                                          "),
-            )?;
-        }
-
-        Ok(())
     }
 
     fn draw_title(&self, stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
