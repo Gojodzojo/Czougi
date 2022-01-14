@@ -62,6 +62,8 @@ impl Game {
             self.stdout,
             DisableMouseCapture,
             cursor::Show,
+            SetBackgroundColor(Color::Reset),
+            SetForegroundColor(Color::Reset),
             Clear(ClearType::All),
             cursor::MoveTo(0, 0),
         )?;
