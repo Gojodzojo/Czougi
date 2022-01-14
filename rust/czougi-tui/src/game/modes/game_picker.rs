@@ -1,4 +1,5 @@
 use super::drawing_utils::draw_background;
+use super::editor::Editor;
 use super::menu::Menu;
 use super::Mode;
 use crate::game::input::InputState;
@@ -46,14 +47,23 @@ impl Mode for GamePicker {
             self.refresh(stdout, horizontal_margin, vertical_margin)?;
         }
 
-        if mouse_state.is_clicked(horizontal_margin + 7, vertical_margin + 2, 15, 3) {
-            self.current_section = Section::OfflineGame;
-            self.refresh(stdout, horizontal_margin, vertical_margin)?;
-        }
+        match self.current_section {
+            Section::OfflineGame => {
+                if mouse_state.is_clicked(horizontal_margin + 22, vertical_margin + 2, 15, 3) {
+                    self.current_section = Section::OnlineGame;
+                    self.refresh(stdout, horizontal_margin, vertical_margin)?;
+                } else if mouse_state.is_clicked(horizontal_margin + 107, vertical_margin + 4, 9, 5)
+                {
+                    return Ok(Some(Box::new(Editor::new())));
+                }
+            }
 
-        if mouse_state.is_clicked(horizontal_margin + 22, vertical_margin + 2, 15, 3) {
-            self.current_section = Section::OnlineGame;
-            self.refresh(stdout, horizontal_margin, vertical_margin)?;
+            Section::OnlineGame => {
+                if mouse_state.is_clicked(horizontal_margin + 7, vertical_margin + 2, 15, 3) {
+                    self.current_section = Section::OfflineGame;
+                    self.refresh(stdout, horizontal_margin, vertical_margin)?;
+                }
+            }
         }
 
         if mouse_state.is_clicked(horizontal_margin, vertical_margin + 5, 6, 3) {
@@ -103,7 +113,7 @@ impl GamePicker {
             cursor::MoveTo(horizontal_margin + 7, vertical_margin + 3),
             Print("│              │             │"),
             cursor::MoveTo(horizontal_margin + 7, vertical_margin + 4),
-            Print("├──────────────┴─────────────┴─────────────────────────────────────────────────────────────────────────────┐"),
+            Print("├──────────────┴─────────────┴─────────────────────────────────────────────────────────────────────┬───────┐"),
         )?;
 
         for x in [horizontal_margin + 7, horizontal_margin + 114] {
@@ -112,32 +122,46 @@ impl GamePicker {
             }
         }
 
+        for y in vertical_margin + 5..vertical_margin + 8 {
+            queue!(
+                stdout,
+                cursor::MoveTo(horizontal_margin + 106, y),
+                Print("│")
+            )?;
+        }
+
         queue!(
             stdout,
+            cursor::MoveTo(horizontal_margin + 106, vertical_margin + 8),
+            Print("└───────┤"),
+            cursor::MoveTo(horizontal_margin + 107, vertical_margin + 5),
             cursor::MoveTo(horizontal_margin + 7, vertical_margin + 47),
             Print("└──────────────────────────────────────────────────────────────────────────────────────────────────────────┘"),
+            SetForegroundColor(Color::White),
+            cursor::MoveTo(horizontal_margin + 107, vertical_margin + 5),
+            Print("  ▐█▌  "),
+            cursor::MoveTo(horizontal_margin + 107, vertical_margin + 6),
+            Print("▐█████▌"),
+            cursor::MoveTo(horizontal_margin + 107, vertical_margin + 7),
+            Print("  ▐█▌  "),
         )?;
 
         match self.current_section {
             Section::OfflineGame => queue!(
                 stdout,
-                SetForegroundColor(Color::White),
+                cursor::MoveTo(horizontal_margin + 24, vertical_margin + 3),
+                Print("Online game"),
                 SetBackgroundColor(OFFLINE_GAME_FRAME_COLOR),
                 cursor::MoveTo(horizontal_margin + 8, vertical_margin + 3),
                 Print(" Offline game "),
-                SetBackgroundColor(Color::Black),
-                cursor::MoveTo(horizontal_margin + 24, vertical_margin + 3),
-                Print("Online game"),
             )?,
             Section::OnlineGame => queue!(
                 stdout,
-                SetForegroundColor(Color::White),
+                cursor::MoveTo(horizontal_margin + 8, vertical_margin + 3),
+                Print(" Offline game "),
                 SetBackgroundColor(ONLINE_GAME_FRAME_COLOR),
                 cursor::MoveTo(horizontal_margin + 23, vertical_margin + 3),
                 Print(" Online game "),
-                SetBackgroundColor(Color::Black),
-                cursor::MoveTo(horizontal_margin + 8, vertical_margin + 3),
-                Print(" Offline game "),
             )?,
         }
 
