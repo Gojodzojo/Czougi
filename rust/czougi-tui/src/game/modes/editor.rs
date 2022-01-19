@@ -4,7 +4,7 @@ use super::drawing_utils::block::{
 use super::drawing_utils::draw_multi_line_text;
 use super::drawing_utils::tank::{draw_tank, Direction};
 use super::Mode;
-use crate::game::input::InputState;
+use crate::game::input::{InputState, MouseState, ScrollState};
 use crate::game::modes::drawing_utils::block::{
     BRICK_BACKGROUND_COLOR, BRICK_FOREGROUND_COLOR, CONCRETE_BACKGROUND_COLOR,
     CONCRETE_FOREGROUND_COLOR, LEAVES_BACKGROUND_COLOR, LEAVES_FOREGROUND_COLOR,
@@ -26,7 +26,35 @@ enum Tool {
     Tank(u8, Direction), // Player number, direction of tank
     Eraser,
 }
-pub struct Editor {}
+
+impl Tool {
+    fn change_tank_direction(&mut self, scroll: &ScrollState) {
+        if let Tool::Tank(_, direction) = self {
+            match scroll {
+                ScrollState::Up => {
+                    *direction = match direction {
+                        Direction::Up => Direction::Left,
+                        Direction::Left => Direction::Down,
+                        Direction::Down => Direction::Right,
+                        Direction::Right => Direction::Up,
+                    };
+                }
+                ScrollState::Down => {
+                    *direction = match direction {
+                        Direction::Up => Direction::Right,
+                        Direction::Right => Direction::Down,
+                        Direction::Down => Direction::Left,
+                        Direction::Left => Direction::Up,
+                    };
+                }
+                _ => {}
+            }
+        }
+    }
+}
+pub struct Editor {
+    tool: Tool,
+}
 
 impl Mode for Editor {
     fn draw(
@@ -46,6 +74,28 @@ impl Mode for Editor {
         }
 
         self.draw_map(stdout, horizontal_margin, vertical_margin)?;
+        self.tool.change_tank_direction(&mouse_state.scroll);
+        self.draw_tool(stdout, mouse_state, horizontal_margin, vertical_margin)?;
+
+        if mouse_state.is_clicked(horizontal_margin + 102, vertical_margin + 10, 8, 4) {
+            self.tool = Tool::Brick;
+        } else if mouse_state.is_clicked(horizontal_margin + 112, vertical_margin + 10, 8, 4) {
+            self.tool = Tool::Concrete;
+        } else if mouse_state.is_clicked(horizontal_margin + 102, vertical_margin + 15, 8, 4) {
+            self.tool = Tool::Water;
+        } else if mouse_state.is_clicked(horizontal_margin + 112, vertical_margin + 15, 8, 4) {
+            self.tool = Tool::Leaves;
+        } else if mouse_state.is_clicked(horizontal_margin + 102, vertical_margin + 20, 8, 4) {
+            self.tool = Tool::Tank(1, Direction::Up);
+        } else if mouse_state.is_clicked(horizontal_margin + 112, vertical_margin + 20, 8, 4) {
+            self.tool = Tool::Tank(2, Direction::Up);
+        } else if mouse_state.is_clicked(horizontal_margin + 102, vertical_margin + 25, 8, 4) {
+            self.tool = Tool::Tank(3, Direction::Up);
+        } else if mouse_state.is_clicked(horizontal_margin + 112, vertical_margin + 25, 8, 4) {
+            self.tool = Tool::Tank(4, Direction::Up);
+        } else if mouse_state.is_clicked(horizontal_margin + 107, vertical_margin + 30, 8, 4) {
+            self.tool = Tool::Eraser;
+        }
 
         Ok(None)
     }
@@ -53,7 +103,7 @@ impl Mode for Editor {
 
 impl Editor {
     pub fn new() -> Self {
-        Editor {}
+        Editor { tool: Tool::Brick }
     }
 
     fn draw_sidebar(&self, stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
@@ -119,10 +169,10 @@ impl Editor {
         draw_leaves_block(stdout, x + 16, y + 17)?;
 
         queue!(stdout, SetBackgroundColor(Color::White))?;
-        draw_tank(stdout, x + 2, y + 20, Color::Yellow, Direction::Up)?;
-        draw_tank(stdout, x + 12, y + 20, Color::Blue, Direction::Up)?;
-        draw_tank(stdout, x + 2, y + 25, Color::Green, Direction::Up)?;
-        draw_tank(stdout, x + 12, y + 25, Color::Red, Direction::Up)?;
+        draw_tank(stdout, x + 2, y + 20, 1, &Direction::Up)?;
+        draw_tank(stdout, x + 12, y + 20, 2, &Direction::Up)?;
+        draw_tank(stdout, x + 2, y + 25, 3, &Direction::Up)?;
+        draw_tank(stdout, x + 12, y + 25, 4, &Direction::Up)?;
 
         queue!(
             stdout,
@@ -173,9 +223,9 @@ impl Editor {
                 cursor::MoveTo(x, row),
                 Print(horizontal_lines),
                 cursor::MoveTo(x, row + 1),
-                SetAttribute(Attribute::Reset),
+                SetAttribute(Attribute::Underlined),
                 Print(horizontal_lines),
-                SetAttribute(Attribute::OverLined),
+                SetAttribute(Attribute::Reset),
             )?;
         }
         queue!(
@@ -183,9 +233,68 @@ impl Editor {
             cursor::MoveTo(x, y + 48),
             Print(horizontal_lines),
             cursor::MoveTo(x, y + 49),
-            SetAttribute(Attribute::Reset),
             Print(horizontal_lines),
         )?;
+
+        Ok(())
+    }
+
+    fn draw_tool(
+        &self,
+        stdout: &mut Stdout,
+        mouse_state: &MouseState,
+        horizontal_margin: u16,
+        vertical_margin: u16,
+    ) -> Result<()> {
+        if !mouse_state.is_hovered(horizontal_margin, vertical_margin, 96, 48) {
+            return Ok(());
+        }
+
+        let MouseState { column, row, .. } = mouse_state;
+        let column = *column - (*column - horizontal_margin) % 2;
+
+        if let Tool::Tank(player_number, direction) = &self.tool {
+            if mouse_state.is_hovered(horizontal_margin, vertical_margin, 92, 46) {
+                draw_tank(stdout, column, *row, *player_number, direction)?;
+                return Ok(());
+            }
+        }
+
+        match self.tool {
+            Tool::Brick => {
+                queue!(
+                    stdout,
+                    SetForegroundColor(BRICK_FOREGROUND_COLOR),
+                    SetBackgroundColor(BRICK_BACKGROUND_COLOR),
+                )?;
+                draw_brick_block(stdout, column, *row)?;
+            }
+            Tool::Concrete => {
+                queue!(
+                    stdout,
+                    SetForegroundColor(CONCRETE_FOREGROUND_COLOR),
+                    SetBackgroundColor(CONCRETE_BACKGROUND_COLOR),
+                )?;
+                draw_concrete_block(stdout, column, *row)?;
+            }
+            Tool::Water => {
+                queue!(
+                    stdout,
+                    SetForegroundColor(WATER_FOREGROUND_COLOR),
+                    SetBackgroundColor(WATER_BACKGROUND_COLOR),
+                )?;
+                draw_water_block(stdout, column, *row)?;
+            }
+            Tool::Leaves => {
+                queue!(
+                    stdout,
+                    SetForegroundColor(LEAVES_FOREGROUND_COLOR),
+                    SetBackgroundColor(LEAVES_BACKGROUND_COLOR),
+                )?;
+                draw_leaves_block(stdout, column, *row)?;
+            }
+            _ => {}
+        }
 
         Ok(())
     }

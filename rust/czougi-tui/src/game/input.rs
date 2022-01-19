@@ -105,12 +105,18 @@ impl PlayerKeysState {
 }
 
 #[derive(Clone)]
+pub enum ScrollState {
+    Up,
+    Down,
+    None,
+}
+
+#[derive(Clone)]
 pub struct MouseState {
     pub column: u16,
     pub row: u16,
     pub left_button: bool,
-    pub right_button: bool,
-    pub middle_button: bool,
+    pub scroll: ScrollState,
 }
 
 impl MouseState {
@@ -119,8 +125,7 @@ impl MouseState {
             column: 1,
             row: 1,
             left_button: false,
-            right_button: false,
-            middle_button: false,
+            scroll: ScrollState::None,
         }
     }
 
@@ -129,22 +134,26 @@ impl MouseState {
         self.row = mouse_event.row;
 
         match mouse_event.kind {
-            MouseEventKind::Up(button) => match button {
-                MouseButton::Left => self.left_button = false,
-                MouseButton::Right => self.right_button = false,
-                MouseButton::Middle => self.middle_button = false,
-            },
-            MouseEventKind::Down(button) => match button {
-                MouseButton::Left => self.left_button = true,
-                MouseButton::Right => self.right_button = true,
-                MouseButton::Middle => self.middle_button = true,
-            },
+            MouseEventKind::Up(MouseButton::Left) => {
+                self.left_button = false;
+            }
+            MouseEventKind::Down(MouseButton::Left) => {
+                self.left_button = true;
+            }
+            MouseEventKind::ScrollUp => {
+                self.scroll = ScrollState::Up;
+            }
+            MouseEventKind::ScrollDown => {
+                self.scroll = ScrollState::Down;
+            }
             _ => {}
         }
     }
 
-    pub fn get_state(&self) -> MouseState {
-        self.clone()
+    pub fn get_state(&mut self) -> MouseState {
+        let state = self.clone();
+        self.scroll = ScrollState::None;
+        state
     }
 
     pub fn is_hovered(&self, x: u16, y: u16, width: u16, height: u16) -> bool {

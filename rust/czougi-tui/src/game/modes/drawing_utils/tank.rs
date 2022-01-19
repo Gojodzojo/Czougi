@@ -16,9 +16,17 @@ pub fn draw_tank(
     stdout: &mut Stdout,
     x: u16,
     y: u16,
-    color: Color,
-    direction: Direction,
+    player_number: u8,
+    direction: &Direction,
 ) -> Result<()> {
+    let color = match player_number {
+        1 => Color::Yellow,
+        2 => Color::Blue,
+        3 => Color::Green,
+        4 => Color::Red,
+        _ => unreachable!(),
+    };
+
     queue!(stdout, SetForegroundColor(color))?;
 
     match direction {
