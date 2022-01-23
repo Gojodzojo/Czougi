@@ -1,7 +1,7 @@
-use super::drawing_utils::{draw_background, draw_multi_line_text};
 use super::editor::Editor;
 use super::game_picker::GamePicker;
 use super::Mode;
+use crate::game::drawing_utils::{draw_background, draw_multi_line_text};
 use crate::game::input::{InputState, MouseState};
 use crate::game::options::Options;
 use crossterm::style::{Color, SetBackgroundColor, SetForegroundColor};

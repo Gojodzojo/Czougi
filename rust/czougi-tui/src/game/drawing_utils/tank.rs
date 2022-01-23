@@ -5,12 +5,7 @@ use crossterm::{
 };
 use std::io::Stdout;
 
-pub enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-}
+use crate::game::level::Direction;
 
 pub fn draw_tank(
     stdout: &mut Stdout,
@@ -20,10 +15,10 @@ pub fn draw_tank(
     direction: &Direction,
 ) -> Result<()> {
     let color = match player_number {
-        1 => Color::Yellow,
-        2 => Color::Blue,
-        3 => Color::Green,
-        4 => Color::Red,
+        0 => Color::Yellow,
+        1 => Color::Blue,
+        2 => Color::Green,
+        3 => Color::Red,
         _ => unreachable!(),
     };
 

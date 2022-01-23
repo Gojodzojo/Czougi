@@ -112,10 +112,18 @@ pub enum ScrollState {
 }
 
 #[derive(Clone)]
+pub enum ButtonState {
+    Pressed,
+    Released,
+    GettingPressed,
+    GettingReleased,
+}
+
+#[derive(Clone)]
 pub struct MouseState {
     pub column: u16,
     pub row: u16,
-    pub left_button: bool,
+    pub left_button: ButtonState,
     pub scroll: ScrollState,
 }
 
@@ -124,7 +132,7 @@ impl MouseState {
         MouseState {
             column: 1,
             row: 1,
-            left_button: false,
+            left_button: ButtonState::Released,
             scroll: ScrollState::None,
         }
     }
@@ -135,10 +143,20 @@ impl MouseState {
 
         match mouse_event.kind {
             MouseEventKind::Up(MouseButton::Left) => {
-                self.left_button = false;
+                match self.left_button {
+                    ButtonState::GettingPressed => self.left_button = ButtonState::GettingReleased,
+                    ButtonState::GettingReleased => self.left_button = ButtonState::Released,
+                    ButtonState::Pressed => self.left_button = ButtonState::GettingReleased,
+                    _ => {}
+                };
             }
             MouseEventKind::Down(MouseButton::Left) => {
-                self.left_button = true;
+                match self.left_button {
+                    ButtonState::GettingPressed => self.left_button = ButtonState::Pressed,
+                    ButtonState::GettingReleased => self.left_button = ButtonState::GettingPressed,
+                    ButtonState::Released => self.left_button = ButtonState::GettingPressed,
+                    _ => {}
+                };
             }
             MouseEventKind::ScrollUp => {
                 self.scroll = ScrollState::Up;
@@ -153,6 +171,11 @@ impl MouseState {
     pub fn get_state(&mut self) -> MouseState {
         let state = self.clone();
         self.scroll = ScrollState::None;
+        match self.left_button {
+            ButtonState::GettingPressed => self.left_button = ButtonState::Pressed,
+            ButtonState::GettingReleased => self.left_button = ButtonState::Released,
+            _ => {}
+        };
         state
     }
 
@@ -161,7 +184,8 @@ impl MouseState {
     }
 
     pub fn is_clicked(&self, x: u16, y: u16, width: u16, height: u16) -> bool {
-        self.is_hovered(x, y, width, height) && self.left_button
+        self.is_hovered(x, y, width, height)
+            && matches!(self.left_button, ButtonState::GettingReleased)
     }
 }
 

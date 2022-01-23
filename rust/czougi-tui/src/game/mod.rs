@@ -1,4 +1,6 @@
+mod drawing_utils;
 mod input;
+mod level;
 mod modes;
 mod options;
 
@@ -100,8 +102,8 @@ impl Game {
 
                 if window_resized {
                     refresh = true;
-                    self.horizontal_margin = (input_state.window_state.width - 122) / 2;
-                    self.vertical_margin = (input_state.window_state.height - 50) / 2;
+                    self.horizontal_margin = (input_state.window_state.width - MIN_WIDTH) / 2;
+                    self.vertical_margin = (input_state.window_state.height - MIN_HEIGHT) / 2;
                     self.last_window_state = input_state.window_state.clone();
                     queue!(
                         self.stdout,

@@ -4,7 +4,6 @@ use crossterm::Result;
 use std::io::Stdout;
 use std::time::Duration;
 
-mod drawing_utils;
 pub mod editor;
 pub mod game_picker;
 pub mod menu;

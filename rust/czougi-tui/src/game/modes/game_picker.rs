@@ -1,7 +1,7 @@
-use super::drawing_utils::draw_background;
 use super::editor::Editor;
 use super::menu::Menu;
 use super::Mode;
+use crate::game::drawing_utils::draw_background;
 use crate::game::input::InputState;
 use crate::game::options::Options;
 use crossterm::style::{Color, SetBackgroundColor, SetForegroundColor};
