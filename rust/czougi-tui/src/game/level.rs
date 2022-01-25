@@ -43,8 +43,8 @@ impl Level {
             if let Some(Tank { x, y, direction }) = tank {
                 draw_tank(
                     stdout,
-                    *x * 2 + horizontal_margin,
-                    *y + vertical_margin,
+                    x * 2 + horizontal_margin,
+                    y + vertical_margin,
                     player_number,
                     direction,
                 )?;
@@ -140,6 +140,25 @@ impl Level {
         }
 
         Ok(())
+    }
+
+    pub fn erase_element(&mut self, x: u16, y: u16) {
+        let filter = |block: &Block| {
+            !((x == block.x + 1 || x == block.x) && (y == block.y + 1 || y == block.y))
+        };
+
+        self.bricks.retain(filter);
+        self.concretes.retain(filter);
+        self.waters.retain(filter);
+        self.leaves.retain(filter);
+
+        self.tanks.iter_mut().for_each(|t| {
+            if let Some(tank) = t {
+                if x >= tank.x && x <= tank.x + 3 && y >= tank.y && y <= tank.y + 3 {
+                    *t = None;
+                }
+            }
+        });
     }
 }
 

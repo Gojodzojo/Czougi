@@ -93,3 +93,14 @@ pub fn draw_concrete_block(stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
     )?;
     Ok(())
 }
+
+pub fn draw_full_block(stdout: &mut Stdout, x: u16, y: u16) -> Result<()> {
+    queue!(
+        stdout,
+        cursor::MoveTo(x, y),
+        Print("████"),
+        cursor::MoveTo(x, y + 1),
+        Print("████"),
+    )?;
+    Ok(())
+}
