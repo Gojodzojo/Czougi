@@ -5,6 +5,7 @@ mod tool;
 
 use self::tool::Tool;
 use super::Mode;
+use crate::game::level::block::BlockType;
 use crate::game::level::Level;
 use crate::game::{input::InputState, options::Options};
 use crossterm::style::Print;
@@ -23,7 +24,7 @@ pub struct Editor {
 impl Editor {
     pub fn new() -> Self {
         Editor {
-            tool: Tool::Brick,
+            tool: Tool::FullBlock(BlockType::Brick),
             level: Level::new(),
             first_selection_corner: None,
         }
@@ -49,15 +50,9 @@ impl Mode for Editor {
 
         draw_grid(stdout, horizontal_margin, vertical_margin)?;
         self.level
+            .draw_blocks(stdout, horizontal_margin, vertical_margin)?;
+        self.level
             .draw_tanks(stdout, horizontal_margin, vertical_margin)?;
-        self.level
-            .draw_bricks(stdout, horizontal_margin, vertical_margin)?;
-        self.level
-            .draw_concretes(stdout, horizontal_margin, vertical_margin)?;
-        self.level
-            .draw_waters(stdout, horizontal_margin, vertical_margin)?;
-        self.level
-            .draw_leaves(stdout, horizontal_margin, vertical_margin)?;
 
         // Mouse is over the map
         if mouse_state.is_hovered(horizontal_margin, vertical_margin, 100, 50) {
@@ -67,17 +62,18 @@ impl Mode for Editor {
             let mouse_map_x = (mouse_x - horizontal_margin) / 2;
             let mouse_map_y = mouse_y - vertical_margin;
 
-            self.tool.change_tank_direction(&mouse_state.scroll);
-            self.tool.draw_tool(
-                stdout,
-                &self.first_selection_corner,
-                mouse_x,
-                mouse_y,
-                mouse_map_x,
-                mouse_map_y,
-                horizontal_margin,
-                vertical_margin,
-            )?;
+            self.tool.handle_scroll(&mouse_state.scroll);
+
+            // self.tool.draw_tool(
+            //     stdout,
+            //     &self.first_selection_corner,
+            //     mouse_x,
+            //     mouse_y,
+            //     mouse_map_x,
+            //     mouse_map_y,
+            //     horizontal_margin,
+            //     vertical_margin,
+            // )?;
 
             self.handle_map_mouse_actions(mouse_state, mouse_map_x, mouse_map_y);
         }

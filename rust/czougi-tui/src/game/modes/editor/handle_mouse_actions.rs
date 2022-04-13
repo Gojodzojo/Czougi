@@ -1,7 +1,10 @@
 use super::{tool::Tool, Editor};
 use crate::game::{
     input::{ButtonState, MouseState},
-    level::{Block, Direction, Tank},
+    level::{
+        block::{Block, BlockType, BlockVariant},
+        tank::{Direction, Tank},
+    },
 };
 
 impl Editor {
@@ -31,52 +34,115 @@ impl Editor {
                     self.first_selection_corner
                 {
                     if mouse_map_x <= 48 && mouse_map_y <= 48 {
-                        let mut action: Box<dyn FnMut(u16, u16) -> ()> = match self.tool {
-                            Tool::Brick => {
-                                Box::new(|x: u16, y: u16| self.level.bricks.push(Block { x, y }))
+                        match self.tool {
+                            Tool::SmallBlock(block_type, block_variant) => {
+                                let position_x_iterator = {
+                                    let (first, last) = if first_selection_corner_x < mouse_map_x {
+                                        (first_selection_corner_x, mouse_map_x)
+                                    } else {
+                                        (mouse_map_x, first_selection_corner_x)
+                                    };
+                                    first..=last
+                                };
+
+                                let position_y_iterator = {
+                                    let (first, last) = if first_selection_corner_y < mouse_map_y {
+                                        (first_selection_corner_y, mouse_map_y)
+                                    } else {
+                                        (mouse_map_y, first_selection_corner_y)
+                                    };
+                                    first..=last
+                                };
+
+                                for x in position_x_iterator {
+                                    for y in position_y_iterator.clone() {
+                                        self.level.blocks.push(Block {
+                                            x,
+                                            y,
+                                            block_type,
+                                            block_variant,
+                                        });
+                                    }
+                                }
                             }
-                            Tool::Concrete => {
-                                Box::new(|x: u16, y: u16| self.level.concretes.push(Block { x, y }))
-                            }
-                            Tool::Water => {
-                                Box::new(|x: u16, y: u16| self.level.waters.push(Block { x, y }))
-                            }
-                            Tool::Leaves => {
-                                Box::new(|x: u16, y: u16| self.level.leaves.push(Block { x, y }))
+                            Tool::FullBlock(block_type) => {
+                                let (left_top_x, right_bottom_x) =
+                                    if first_selection_corner_x < mouse_map_x {
+                                        (first_selection_corner_x, mouse_map_x)
+                                    } else {
+                                        (mouse_map_x, first_selection_corner_x)
+                                    };
+
+                                let (left_top_y, right_bottom_y) =
+                                    if first_selection_corner_y < mouse_map_y {
+                                        (first_selection_corner_y, mouse_map_y)
+                                    } else {
+                                        (mouse_map_y, first_selection_corner_y)
+                                    };
+
+                                for x in left_top_x..=right_bottom_x {
+                                    for y in left_top_y..=right_bottom_y {
+                                        let is_left = (x - left_top_x) % 2 == 0;
+                                        let is_top = (y - left_top_y) % 2 == 0;
+
+                                        let block_variant = match (is_left, is_top) {
+                                            (true, true) => BlockVariant::LeftTop,
+                                            (true, false) => BlockVariant::LeftBottom,
+                                            (false, true) => BlockVariant::RightTop,
+                                            (false, false) => BlockVariant::RightBottom,
+                                        };
+
+                                        self.level.blocks.push(Block {
+                                            x,
+                                            y,
+                                            block_type,
+                                            block_variant,
+                                        });
+                                    }
+                                }
                             }
                             Tool::Eraser => {
-                                Box::new(|x: u16, y: u16| self.level.erase_element(x, y))
+                                let (left_top_x, right_bottom_x) = {
+                                    if first_selection_corner_x < mouse_map_x {
+                                        (first_selection_corner_x, mouse_map_x)
+                                    } else {
+                                        (mouse_map_x, first_selection_corner_x)
+                                    }
+                                };
+
+                                let (left_top_y, right_bottom_y) = {
+                                    if first_selection_corner_y < mouse_map_y {
+                                        (first_selection_corner_y, mouse_map_y)
+                                    } else {
+                                        (mouse_map_y, first_selection_corner_y)
+                                    }
+                                };
+
+                                self.level.blocks.retain(|block| {
+                                    !(block.x >= left_top_x
+                                        && block.x <= right_bottom_x
+                                        && block.y >= left_top_y
+                                        && block.y <= right_bottom_y)
+                                });
+
+                                self.level.tanks.iter_mut().for_each(|t| {
+                                    if let Some(tank) = t {
+                                        if tank.x >= left_top_x
+                                            && tank.x + 3 <= right_bottom_x
+                                            && tank.y >= left_top_y
+                                            && tank.y + 3 <= right_bottom_y
+                                        {
+                                            *t = None;
+                                        }
+                                    }
+                                });
                             }
                             _ => unreachable!(),
                         };
-
-                        let position_x_iterator = {
-                            let (first, last) = if first_selection_corner_x < mouse_map_x {
-                                (first_selection_corner_x, mouse_map_x)
-                            } else {
-                                (mouse_map_x, first_selection_corner_x)
-                            };
-                            (first..=last).step_by(2).chain(last..=last)
-                        };
-
-                        let position_y_iterator = {
-                            let (first, last) = if first_selection_corner_y < mouse_map_y {
-                                (first_selection_corner_y, mouse_map_y)
-                            } else {
-                                (mouse_map_y, first_selection_corner_y)
-                            };
-                            (first..=last).step_by(2).chain(last..=last)
-                        };
-
-                        for x in position_x_iterator {
-                            for y in position_y_iterator.clone() {
-                                action(x, y);
-                            }
-                        }
-
-                        self.first_selection_corner = None;
                     }
                 }
+
+                self.first_selection_corner = None;
             }
             _ => {}
         }
@@ -94,13 +160,13 @@ impl Editor {
 
         if matches!(mouse_state.left_button, ButtonState::GettingReleased) {
             if mouse_state.is_hovered(horizontal_margin + 102, vertical_margin + 10, 8, 4) {
-                self.tool = Tool::Brick;
+                self.tool = Tool::FullBlock(BlockType::Brick);
             } else if mouse_state.is_hovered(horizontal_margin + 112, vertical_margin + 10, 8, 4) {
-                self.tool = Tool::Concrete;
+                self.tool = Tool::FullBlock(BlockType::Concrete);
             } else if mouse_state.is_hovered(horizontal_margin + 102, vertical_margin + 15, 8, 4) {
-                self.tool = Tool::Water;
+                self.tool = Tool::FullBlock(BlockType::Water);
             } else if mouse_state.is_hovered(horizontal_margin + 112, vertical_margin + 15, 8, 4) {
-                self.tool = Tool::Leaves;
+                self.tool = Tool::FullBlock(BlockType::Leaves);
             } else if mouse_state.is_hovered(horizontal_margin + 102, vertical_margin + 20, 8, 4) {
                 self.tool = Tool::Tank(0, Direction::Up);
             } else if mouse_state.is_hovered(horizontal_margin + 112, vertical_margin + 20, 8, 4) {

@@ -1,18 +1,49 @@
+use std::io::Stdout;
+
 use crossterm::{
     cursor, queue,
     style::{Color, Print, SetForegroundColor},
     Result,
 };
-use std::io::Stdout;
 
-use crate::game::level::Direction;
+#[derive(Copy, Clone)]
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+pub struct Tank {
+    pub x: u16,
+    pub y: u16,
+    pub direction: Direction,
+}
+
+impl Tank {
+    pub fn draw(
+        &self,
+        stdout: &mut Stdout,
+        horizontal_margin: u16,
+        vertical_margin: u16,
+        player_number: u8,
+    ) -> Result<()> {
+        draw_tank(
+            stdout,
+            self.x * 2 + horizontal_margin,
+            self.y + vertical_margin,
+            player_number,
+            self.direction,
+        )
+    }
+}
 
 pub fn draw_tank(
     stdout: &mut Stdout,
     x: u16,
     y: u16,
     player_number: u8,
-    direction: &Direction,
+    direction: Direction,
 ) -> Result<()> {
     let color = match player_number {
         0 => Color::Yellow,

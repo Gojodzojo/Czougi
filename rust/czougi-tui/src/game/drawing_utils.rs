@@ -6,9 +6,6 @@ use crossterm::{
     Result,
 };
 
-pub mod block;
-pub mod tank;
-
 pub fn draw_multi_line_text(
     stdout: &mut Stdout,
     text_iter: Iter<&str>,
