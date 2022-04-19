@@ -1,4 +1,3 @@
-mod draw_grid;
 mod draw_sidebar;
 mod handle_mouse_actions;
 mod tool;
@@ -6,11 +5,9 @@ mod tool;
 use self::tool::Tool;
 use super::Mode;
 use crate::game::level::block::BlockType;
-use crate::game::level::Level;
+use crate::game::level::{Level, LEVEL_MAP_WIDTH, LEVEL_SIZE};
 use crate::game::{input::InputState, options::Options};
-use crossterm::style::Print;
-use crossterm::{cursor, queue, Result};
-use draw_grid::draw_grid;
+use crossterm::Result;
 use draw_sidebar::draw_sidebar;
 use std::io::Stdout;
 use std::time::Duration;
@@ -45,22 +42,31 @@ impl Mode for Editor {
         let InputState { mouse_state, .. } = input_state;
 
         if refresh {
-            draw_sidebar(stdout, horizontal_margin + 100, vertical_margin)?;
+            draw_sidebar(stdout, horizontal_margin + LEVEL_MAP_WIDTH, vertical_margin)?;
         }
 
-        draw_grid(stdout, horizontal_margin, vertical_margin)?;
-        self.level
-            .draw_blocks(stdout, horizontal_margin, vertical_margin)?;
-        self.level
-            .draw_tanks(stdout, horizontal_margin, vertical_margin)?;
+        self.level.draw(
+            stdout,
+            horizontal_margin,
+            vertical_margin,
+            0,
+            0,
+            LEVEL_SIZE,
+            LEVEL_SIZE,
+        )?;
 
         // Mouse is over the map
-        if mouse_state.is_hovered(horizontal_margin, vertical_margin, 100, 50) {
-            let mouse_x = mouse_state.column - (mouse_state.column - horizontal_margin) % 2;
-            let mouse_y = mouse_state.row;
+        if mouse_state.is_hovered(
+            horizontal_margin,
+            vertical_margin,
+            LEVEL_MAP_WIDTH,
+            LEVEL_SIZE,
+        ) {
+            let mouse_level_x = mouse_state.column - (mouse_state.column - horizontal_margin) % 2;
+            let mouse_level_y = mouse_state.row;
 
-            let mouse_map_x = (mouse_x - horizontal_margin) / 2;
-            let mouse_map_y = mouse_y - vertical_margin;
+            let mouse_map_x = (mouse_level_x - horizontal_margin) / 2;
+            let mouse_map_y = mouse_level_y - vertical_margin;
 
             self.tool.handle_scroll(&mouse_state.scroll);
 

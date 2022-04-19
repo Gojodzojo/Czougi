@@ -4,6 +4,11 @@ mod level;
 mod modes;
 mod options;
 
+use self::{
+    input::WindowState,
+    level::{LEVEL_MAP_WIDTH, LEVEL_SIZE},
+    modes::SIDEBAR_WIDTH,
+};
 use crossterm::{
     cursor,
     event::{DisableMouseCapture, EnableMouseCapture},
@@ -22,10 +27,8 @@ use std::{
     time::Instant,
 };
 
-use self::input::WindowState;
-
-const MIN_WIDTH: u16 = 122;
-const MIN_HEIGHT: u16 = 50;
+const MIN_WIDTH: u16 = LEVEL_MAP_WIDTH + SIDEBAR_WIDTH;
+const MIN_HEIGHT: u16 = LEVEL_SIZE;
 
 pub struct Game {
     stdout: Stdout,

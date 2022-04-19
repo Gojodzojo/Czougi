@@ -1,10 +1,3 @@
-use crossterm::{
-    queue,
-    style::{Color, SetBackgroundColor, SetForegroundColor},
-    Result,
-};
-use std::io::Stdout;
-
 use crate::game::{
     input::ScrollState,
     level::{

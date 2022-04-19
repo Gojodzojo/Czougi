@@ -2,65 +2,80 @@ pub mod block;
 pub mod tank;
 
 use self::{block::Block, tank::Tank};
-use crossterm::Result;
-use std::io::Stdout;
+use crossterm::{
+    cursor, queue,
+    style::{Attribute, Color, Print, SetAttribute, SetBackgroundColor, SetForegroundColor},
+    Result,
+};
+use std::{collections::HashSet, io::Stdout};
 pub struct Level {
-    pub blocks: Vec<Block>,
+    pub blocks: HashSet<Block>,
     pub tanks: [Option<Tank>; 4],
 }
+
+pub const LEVEL_SIZE: u16 = 50;
+pub const LEVEL_MAP_WIDTH: u16 = 100;
 
 impl Level {
     pub fn new() -> Self {
         Level {
-            blocks: vec![],
+            blocks: HashSet::new(),
             tanks: [None, None, None, None],
         }
     }
 
-    pub fn draw_blocks(
+    pub fn draw(
         &self,
         stdout: &mut Stdout,
         horizontal_margin: u16,
         vertical_margin: u16,
+        x: u16,
+        y: u16,
+        width: u16,
+        height: u16,
     ) -> Result<()> {
-        for block in self.blocks.iter() {
-            block.draw(stdout, horizontal_margin, vertical_margin)?;
+        queue!(
+            stdout,
+            SetForegroundColor(Color::White),
+            SetBackgroundColor(Color::Black)
+        )?;
+
+        for x in x..x + width {
+            for y in y..y + height {
+                let graphics = if x % 2 == 1 { " │" } else { "  " };
+
+                let horizontal_line = y % 2 == 1;
+
+                if horizontal_line {
+                    queue!(stdout, SetAttribute(Attribute::Underlined))?;
+                }
+
+                queue!(
+                    stdout,
+                    cursor::MoveTo(x * 2 + horizontal_margin, y + vertical_margin),
+                    Print(graphics)
+                )?;
+
+                if horizontal_line {
+                    queue!(stdout, SetAttribute(Attribute::Reset))?;
+                }
+            }
         }
 
-        Ok(())
-    }
+        for block in self.blocks.iter() {
+            if block.x >= x && block.x < x + width && block.y >= y && block.y < y + height {
+                block.draw(stdout, horizontal_margin, vertical_margin)?;
+            }
+        }
 
-    pub fn draw_tanks(
-        &self,
-        stdout: &mut Stdout,
-        horizontal_margin: u16,
-        vertical_margin: u16,
-    ) -> Result<()> {
         for (tank, player_number) in self.tanks.iter().zip(0..=3 as u8) {
             if let Some(tank) = tank {
-                tank.draw(stdout, horizontal_margin, vertical_margin, player_number)?;
+                if tank.x >= x && tank.x < x + width && tank.y >= y && tank.y < y + height {
+                    tank.draw(stdout, horizontal_margin, vertical_margin, player_number)?;
+                }
             }
         }
 
         Ok(())
     }
-
-    // pub fn erase_element(&mut self, x: u16, y: u16) {
-    //     let filter = |block: &Block| {
-    //         !((x == block.x + 1 || x == block.x) && (y == block.y + 1 || y == block.y))
-    //     };
-
-    //     self.bricks.retain(filter);
-    //     self.concretes.retain(filter);
-    //     self.waters.retain(filter);
-    //     self.leaves.retain(filter);
-
-    //     self.tanks.iter_mut().for_each(|t| {
-    //         if let Some(tank) = t {
-    //             if x >= tank.x && x <= tank.x + 3 && y >= tank.y && y <= tank.y + 3 {
-    //                 *t = None;
-    //             }
-    //         }
-    //     });
-    // }
 }

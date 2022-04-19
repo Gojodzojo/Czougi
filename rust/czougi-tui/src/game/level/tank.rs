@@ -20,6 +20,8 @@ pub struct Tank {
     pub direction: Direction,
 }
 
+pub const TANK_SIZE: u16 = 4;
+
 impl Tank {
     pub fn draw(
         &self,
@@ -58,8 +60,8 @@ pub fn draw_tank(
     match direction {
         Direction::Up => queue!(
             stdout,
-            cursor::MoveTo(x + 3, y),
-            Print("▐▌"),
+            cursor::MoveTo(x, y),
+            Print("   ▐▌   "),
             cursor::MoveTo(x, y + 1),
             Print("▄▄████▄▄"),
             cursor::MoveTo(x, y + 2),
@@ -75,30 +77,30 @@ pub fn draw_tank(
             Print("████████"),
             cursor::MoveTo(x, y + 2),
             Print("▀▀████▀▀"),
-            cursor::MoveTo(x + 3, y + 3),
-            Print("▐▌"),
+            cursor::MoveTo(x, y + 3),
+            Print("   ▐▌   "),
         )?,
         Direction::Left => queue!(
             stdout,
-            cursor::MoveTo(x + 3, y),
-            Print("█████"),
+            cursor::MoveTo(x, y),
+            Print("   █████"),
             cursor::MoveTo(x, y + 1),
-            Print("▄▄█████"),
+            Print("▄▄█████ "),
             cursor::MoveTo(x, y + 2),
-            Print("▀▀█████"),
-            cursor::MoveTo(x + 3, y + 3),
-            Print("█████"),
+            Print("▀▀█████ "),
+            cursor::MoveTo(x, y + 3),
+            Print("   █████"),
         )?,
         Direction::Right => queue!(
             stdout,
             cursor::MoveTo(x, y),
-            Print("█████"),
-            cursor::MoveTo(x + 1, y + 1),
-            Print("█████▄▄"),
-            cursor::MoveTo(x + 1, y + 2),
-            Print("█████▀▀"),
+            Print("█████   "),
+            cursor::MoveTo(x, y + 1),
+            Print(" █████▄▄"),
+            cursor::MoveTo(x, y + 2),
+            Print(" █████▀▀"),
             cursor::MoveTo(x, y + 3),
-            Print("█████"),
+            Print("█████   "),
         )?,
     }
 

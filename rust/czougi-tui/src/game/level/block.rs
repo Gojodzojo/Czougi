@@ -1,4 +1,4 @@
-use std::io::Stdout;
+use std::{hash::Hash, io::Stdout};
 
 use crossterm::{
     cursor, queue,
@@ -72,6 +72,7 @@ pub struct Block {
     pub block_type: BlockType,
     pub block_variant: BlockVariant,
 }
+
 impl Block {
     pub fn draw(
         &self,
@@ -86,6 +87,25 @@ impl Block {
             horizontal_margin + self.x * 2,
             vertical_margin + self.y,
         )
+    }
+}
+
+impl PartialEq for Block {
+    fn eq(&self, other: &Self) -> bool {
+        self.x == other.x && self.y == other.y
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        self.x != other.x || self.y != other.y
+    }
+}
+
+impl Eq for Block {}
+
+impl Hash for Block {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.x.hash(state);
+        self.y.hash(state);
     }
 }
 

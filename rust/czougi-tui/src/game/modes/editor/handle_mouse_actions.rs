@@ -3,7 +3,8 @@ use crate::game::{
     input::{ButtonState, MouseState},
     level::{
         block::{Block, BlockType, BlockVariant},
-        tank::{Direction, Tank},
+        tank::{Direction, Tank, TANK_SIZE},
+        LEVEL_MAP_WIDTH, LEVEL_SIZE,
     },
 };
 
@@ -16,14 +17,49 @@ impl Editor {
     ) {
         match mouse_state.left_button {
             ButtonState::GettingPressed => {
-                if !matches!(self.tool, Tool::Tank(_, _)) && mouse_map_x <= 48 && mouse_map_y <= 48
+                if !matches!(self.tool, Tool::Tank(_, _))
+                    && mouse_map_x < LEVEL_SIZE
+                    && mouse_map_y < LEVEL_SIZE
                 {
                     self.first_selection_corner = Some((mouse_map_x, mouse_map_y));
                 }
             }
             ButtonState::GettingReleased => {
                 if let Tool::Tank(player_number, direction) = self.tool {
-                    if mouse_map_x <= 46 && mouse_map_y <= 46 {
+                    let mut is_overlapping = false;
+
+                    for block in self.level.blocks.iter() {
+                        if block.x >= mouse_map_x
+                            && block.x < mouse_map_x + TANK_SIZE
+                            && block.y >= mouse_map_y
+                            && block.y < mouse_map_y + TANK_SIZE
+                        {
+                            is_overlapping = true;
+                            break;
+                        }
+                    }
+
+                    if !is_overlapping {
+                        for (t, p) in self.level.tanks.iter().zip(0..=3) {
+                            if p != player_number {
+                                if let Some(tank) = t {
+                                    if tank.x + 3 >= mouse_map_x
+                                        && tank.x <= mouse_map_x + 3
+                                        && tank.y + 3 >= mouse_map_y
+                                        && tank.y <= mouse_map_y + 3
+                                    {
+                                        is_overlapping = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if !is_overlapping
+                        && mouse_map_x <= LEVEL_SIZE - TANK_SIZE
+                        && mouse_map_y <= LEVEL_SIZE - TANK_SIZE
+                    {
                         self.level.tanks[player_number as usize] = Some(Tank {
                             x: mouse_map_x,
                             y: mouse_map_y,
@@ -33,7 +69,7 @@ impl Editor {
                 } else if let Some((first_selection_corner_x, first_selection_corner_y)) =
                     self.first_selection_corner
                 {
-                    if mouse_map_x <= 48 && mouse_map_y <= 48 {
+                    if mouse_map_x < LEVEL_SIZE && mouse_map_y < LEVEL_SIZE {
                         match self.tool {
                             Tool::SmallBlock(block_type, block_variant) => {
                                 let position_x_iterator = {
@@ -56,7 +92,7 @@ impl Editor {
 
                                 for x in position_x_iterator {
                                     for y in position_y_iterator.clone() {
-                                        self.level.blocks.push(Block {
+                                        self.level.blocks.insert(Block {
                                             x,
                                             y,
                                             block_type,
@@ -81,7 +117,17 @@ impl Editor {
                                     };
 
                                 for x in left_top_x..=right_bottom_x {
-                                    for y in left_top_y..=right_bottom_y {
+                                    'label: for y in left_top_y..=right_bottom_y {
+                                        for tank in self.level.tanks.iter().flatten() {
+                                            if x >= tank.x
+                                                && x <= tank.x + 3
+                                                && y >= tank.y
+                                                && y <= tank.y + 3
+                                            {
+                                                continue 'label;
+                                            }
+                                        }
+
                                         let is_left = (x - left_top_x) % 2 == 0;
                                         let is_top = (y - left_top_y) % 2 == 0;
 
@@ -92,7 +138,7 @@ impl Editor {
                                             (false, false) => BlockVariant::RightBottom,
                                         };
 
-                                        self.level.blocks.push(Block {
+                                        self.level.blocks.insert(Block {
                                             x,
                                             y,
                                             block_type,
@@ -127,10 +173,10 @@ impl Editor {
 
                                 self.level.tanks.iter_mut().for_each(|t| {
                                     if let Some(tank) = t {
-                                        if tank.x >= left_top_x
-                                            && tank.x + 3 <= right_bottom_x
-                                            && tank.y >= left_top_y
-                                            && tank.y + 3 <= right_bottom_y
+                                        if !(tank.x + 3 < left_top_x
+                                            || tank.x > right_bottom_x
+                                            || tank.y + 3 < left_top_y
+                                            || tank.y > right_bottom_y)
                                         {
                                             *t = None;
                                         }
@@ -159,23 +205,68 @@ impl Editor {
         }
 
         if matches!(mouse_state.left_button, ButtonState::GettingReleased) {
-            if mouse_state.is_hovered(horizontal_margin + 102, vertical_margin + 10, 8, 4) {
+            if mouse_state.is_hovered(
+                horizontal_margin + LEVEL_MAP_WIDTH + 3,
+                vertical_margin + 10,
+                8,
+                4,
+            ) {
                 self.tool = Tool::FullBlock(BlockType::Brick);
-            } else if mouse_state.is_hovered(horizontal_margin + 112, vertical_margin + 10, 8, 4) {
+            } else if mouse_state.is_hovered(
+                horizontal_margin + LEVEL_MAP_WIDTH + 14,
+                vertical_margin + 10,
+                8,
+                4,
+            ) {
                 self.tool = Tool::FullBlock(BlockType::Concrete);
-            } else if mouse_state.is_hovered(horizontal_margin + 102, vertical_margin + 15, 8, 4) {
+            } else if mouse_state.is_hovered(
+                horizontal_margin + LEVEL_MAP_WIDTH + 3,
+                vertical_margin + 15,
+                8,
+                4,
+            ) {
                 self.tool = Tool::FullBlock(BlockType::Water);
-            } else if mouse_state.is_hovered(horizontal_margin + 112, vertical_margin + 15, 8, 4) {
+            } else if mouse_state.is_hovered(
+                horizontal_margin + LEVEL_MAP_WIDTH + 14,
+                vertical_margin + 15,
+                8,
+                4,
+            ) {
                 self.tool = Tool::FullBlock(BlockType::Leaves);
-            } else if mouse_state.is_hovered(horizontal_margin + 102, vertical_margin + 20, 8, 4) {
+            } else if mouse_state.is_hovered(
+                horizontal_margin + LEVEL_MAP_WIDTH + 3,
+                vertical_margin + 20,
+                8,
+                4,
+            ) {
                 self.tool = Tool::Tank(0, Direction::Up);
-            } else if mouse_state.is_hovered(horizontal_margin + 112, vertical_margin + 20, 8, 4) {
+            } else if mouse_state.is_hovered(
+                horizontal_margin + LEVEL_MAP_WIDTH + 14,
+                vertical_margin + 20,
+                8,
+                4,
+            ) {
                 self.tool = Tool::Tank(1, Direction::Up);
-            } else if mouse_state.is_hovered(horizontal_margin + 102, vertical_margin + 25, 8, 4) {
+            } else if mouse_state.is_hovered(
+                horizontal_margin + LEVEL_MAP_WIDTH + 3,
+                vertical_margin + 25,
+                8,
+                4,
+            ) {
                 self.tool = Tool::Tank(2, Direction::Up);
-            } else if mouse_state.is_hovered(horizontal_margin + 112, vertical_margin + 25, 8, 4) {
+            } else if mouse_state.is_hovered(
+                horizontal_margin + LEVEL_MAP_WIDTH + 13,
+                vertical_margin + 25,
+                8,
+                4,
+            ) {
                 self.tool = Tool::Tank(3, Direction::Up);
-            } else if mouse_state.is_hovered(horizontal_margin + 107, vertical_margin + 30, 8, 4) {
+            } else if mouse_state.is_hovered(
+                horizontal_margin + LEVEL_MAP_WIDTH + 9,
+                vertical_margin + 30,
+                8,
+                4,
+            ) {
                 self.tool = Tool::Eraser;
             }
         }

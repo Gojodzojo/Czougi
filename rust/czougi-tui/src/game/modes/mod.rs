@@ -7,6 +7,8 @@ use std::time::Duration;
 pub mod editor;
 pub mod game_picker;
 pub mod menu;
+
+pub const SIDEBAR_WIDTH: u16 = 25;
 pub trait Mode {
     fn draw(
         &mut self,
