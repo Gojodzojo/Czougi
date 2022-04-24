@@ -62,18 +62,20 @@ impl Level {
             }
         }
 
-        for block in self.blocks.iter() {
-            if block.x >= x && block.x < x + width && block.y >= y && block.y < y + height {
-                block.draw(stdout, horizontal_margin, vertical_margin)?;
-            }
-        }
-
-        for (tank, player_number) in self.tanks.iter().zip(0..=3 as u8) {
+        for (tank, player_number) in self.tanks.iter().zip(0..4 as u8) {
             if let Some(tank) = tank {
                 if tank.x >= x && tank.x < x + width && tank.y >= y && tank.y < y + height {
                     tank.draw(stdout, horizontal_margin, vertical_margin, player_number)?;
                 }
             }
+        }
+
+        let filtered_blocks = self.blocks.iter().filter(|block| {
+            block.x >= x && block.x < x + width && block.y >= y && block.y < y + height
+        });
+
+        for block in filtered_blocks {
+            block.draw(stdout, horizontal_margin, vertical_margin)?;
         }
 
         Ok(())

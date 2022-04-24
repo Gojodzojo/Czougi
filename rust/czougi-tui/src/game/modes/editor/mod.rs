@@ -43,17 +43,16 @@ impl Mode for Editor {
 
         if refresh {
             draw_sidebar(stdout, horizontal_margin + LEVEL_MAP_WIDTH, vertical_margin)?;
+            self.level.draw(
+                stdout,
+                horizontal_margin,
+                vertical_margin,
+                0,
+                0,
+                LEVEL_SIZE,
+                LEVEL_SIZE,
+            )?;
         }
-
-        self.level.draw(
-            stdout,
-            horizontal_margin,
-            vertical_margin,
-            0,
-            0,
-            LEVEL_SIZE,
-            LEVEL_SIZE,
-        )?;
 
         // Mouse is over the map
         if mouse_state.is_hovered(
@@ -81,7 +80,14 @@ impl Mode for Editor {
             //     vertical_margin,
             // )?;
 
-            self.handle_map_mouse_actions(mouse_state, mouse_map_x, mouse_map_y);
+            self.handle_map_mouse_actions(
+                stdout,
+                horizontal_margin,
+                vertical_margin,
+                mouse_state,
+                mouse_map_x,
+                mouse_map_y,
+            )?;
         }
         // Mouse is over the sidebar
         else {
