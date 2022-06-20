@@ -34,33 +34,7 @@ impl Level {
         width: u16,
         height: u16,
     ) -> Result<()> {
-        queue!(
-            stdout,
-            SetForegroundColor(Color::White),
-            SetBackgroundColor(Color::Black)
-        )?;
-
-        for x in x..x + width {
-            for y in y..y + height {
-                let graphics = if x % 2 == 1 { " │" } else { "  " };
-
-                let horizontal_line = y % 2 == 1;
-
-                if horizontal_line {
-                    queue!(stdout, SetAttribute(Attribute::Underlined))?;
-                }
-
-                queue!(
-                    stdout,
-                    cursor::MoveTo(x * 2 + horizontal_margin, y + vertical_margin),
-                    Print(graphics)
-                )?;
-
-                if horizontal_line {
-                    queue!(stdout, SetAttribute(Attribute::Reset))?;
-                }
-            }
-        }
+        queue!(stdout, SetBackgroundColor(Color::Black))?;
 
         for (tank, player_number) in self.tanks.iter().zip(0..4 as u8) {
             if let Some(tank) = tank {
@@ -74,8 +48,43 @@ impl Level {
             block.x >= x && block.x < x + width && block.y >= y && block.y < y + height
         });
 
-        for block in filtered_blocks {
+        for block in filtered_blocks.clone() {
             block.draw(stdout, horizontal_margin, vertical_margin)?;
+        }
+
+        let mut background_tiles = vec![];
+        background_tiles.reserve((width * height) as usize);
+
+        for x in x..x + width {
+            for y in y..y + height {
+                background_tiles.push((x, y));
+            }
+        }
+
+        for block in filtered_blocks {
+            background_tiles.retain(|(x, y)| *x != block.x || *y != block.y);
+        }
+
+        queue!(stdout, SetForegroundColor(Color::White),)?;
+
+        for (x, y) in background_tiles {
+            let graphics = if x % 2 == 1 { " │" } else { "  " };
+
+            let horizontal_line = y % 2 == 1;
+
+            if horizontal_line {
+                queue!(stdout, SetAttribute(Attribute::Underlined))?;
+            }
+
+            queue!(
+                stdout,
+                cursor::MoveTo(x * 2 + horizontal_margin, y + vertical_margin),
+                Print(graphics)
+            )?;
+
+            if horizontal_line {
+                queue!(stdout, SetAttribute(Attribute::Reset))?;
+            }
         }
 
         Ok(())
